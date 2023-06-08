@@ -8,30 +8,36 @@
 import XCTest
 @testable import SearchMovie_MVP
 
-class MockView: MainViewProtocol {
-    var testText: String?
-    func setGreeting(with text: String) {
-        self.testText = text
+class MockView: MainViewInput {
+    func success() {
+        //
+    }
+    
+    func failure(_ error: Error) {
+        //
     }
 }
 
 final class MainPresenterTest: XCTestCase {
     
     var view: MockView!
-    var model: Person!
+    var model: Comment!
+    var networkService: NetworkService!
     var presenter: MainPresenter!
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
         view = MockView()
-        model = Person(firstName: "Baz", lastName: "Bar")
-        presenter = MainPresenter(view: view, model: model)
+        model = Comment(postId: 0, id: 0, name: "Baz", email: "Bar", body: "Foo")
+        networkService = NetworkService()
+        presenter = MainPresenter(view: view, networkService: networkService)
     }
 
     override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         view = nil
         model = nil
+        networkService = nil
         presenter = nil
     }
     
@@ -42,16 +48,14 @@ final class MainPresenterTest: XCTestCase {
     }
     
     func testView() {
-        presenter.showGreeting()
-        XCTAssertEqual(view.testText, "Baz Bar")
-        
-        presenter.resetLabel()
-        XCTAssertEqual(view.testText, "What is your name?")
     }
     
     func testModel() {
-        XCTAssertEqual(model.firstName, "Baz")
-        XCTAssertEqual(model.lastName, "Bar")
+        XCTAssertEqual(model.postId, 0)
+        XCTAssertEqual(model.id, 0)
+        XCTAssertEqual(model.name, "Baz")
+        XCTAssertEqual(model.email, "Bar")
+        XCTAssertEqual(model.body, "Foo")
     }
 
 }

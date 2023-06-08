@@ -8,36 +8,45 @@
 import Foundation
 import UIKit
 
-struct Person {
-    let firstName: String
-    let lastName: String
+protocol MainViewInput: AnyObject {
+    func success()
+    func failure(_ error: Error)
 }
 
-protocol MainViewProtocol: AnyObject {
-    func setGreeting(with text: String)
+protocol MainViewOutput: AnyObject {
+    var comments: [Comment]? { get set }
+    init(view: MainViewInput, networkService: NetworkServiceProtocol)
+    func getComments()
+    func setCells() -> [ReusableView.Type]
 }
 
-protocol MainViewPresenterProtocol: AnyObject {
-    init(view: MainViewProtocol, model: Person)
-    func showGreeting()
-    func resetLabel()
-}
-
-final class MainPresenter: MainViewPresenterProtocol {
-    let view: MainViewProtocol
-    let model: Person
+final class MainPresenter: MainViewOutput {
+    weak var view: MainViewInput?
+    let networkService: NetworkServiceProtocol!
+    var comments: [Comment]?
     
-    init(view: MainViewProtocol, model: Person) {
+    init(view: MainViewInput, networkService: NetworkServiceProtocol) {
         self.view = view
-        self.model = model
+        self.networkService = networkService
+        getComments()
     }
     
-    func showGreeting() {
-        let greeting = model.firstName + " " + model.lastName
-        view.setGreeting(with: greeting)
+    func setCells() -> [ReusableView.Type] {
+        return [UITableViewCell.self, UITableViewCell.self]
     }
     
-    func resetLabel() {
-        view.setGreeting(with: "What is your name?")
+    func getComments() {
+        networkService.getComments { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let comments):
+                    self.comments = comments
+                    self.view?.success()
+                case .failure(let error):
+                    self.view?.failure(error)
+                }
+            }
+        }
     }
 }

@@ -16,5 +16,10 @@ class BaseVC: UIViewController {
     
     private func setupAppearance() {
         view.backgroundColor = .white
+        
+    }
+    
+    private func setupNavBar() {
+//        navigationController?.navigationBar.barTintColor = .systemGray
     }
 }
