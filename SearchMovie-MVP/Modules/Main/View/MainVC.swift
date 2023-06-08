@@ -11,80 +11,79 @@ final class MainVC: BaseVC {
     
     var presenter: MainPresenter!
     
-    private let label: UILabel = {
-        let label = UILabel()
-        label.text = "What is your name?"
-        label.textColor = .black
-        label.numberOfLines = 0
-        label.textAlignment = .center
-        return label
-    }()
-    
-    private let button: UIButton = {
-        let button = UIButton(type: .custom)
-        button.setTitle("Tap", for: .normal)
-        button.backgroundColor = .systemBlue
-        button.titleLabel?.textColor = .white
-        button.layer.cornerRadius = 10
-        button.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
-        return button
-    }()
-    
-    private let resetButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.setImage(UIImage(systemName: "arrow.clockwise"), for: .normal)
-        button.imageView?.tintColor = .systemBlue
-        return button
-    }()
+    private let tableView = UITableView(frame: .zero, style: .grouped)
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        configTableView()
         setupLayout()
-        setupActions()
     }
     
-    private func setupActions() {
-        button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-        resetButton.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
+    private func configTableView() {
+        let cells = presenter.setCells()
+        tableView.register(cellTypes: cells)
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        
+        tableView.backgroundColor = .clear
+        tableView.showsVerticalScrollIndicator = false
     }
     
     private func setupLayout() {
-        view.addSubviewWithoutAutoresizing(label, button, resetButton)
+        view.addSubviewWithoutAutoresizing(tableView)
         
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
-            label.trailingAnchor.constraint(greaterThanOrEqualTo: view.trailingAnchor, constant: -20),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -20),
-            
-            button.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 20),
-            button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
-            label.trailingAnchor.constraint(greaterThanOrEqualTo: view.trailingAnchor, constant: -20),
-            label.heightAnchor.constraint(equalToConstant: 28),
-            
-            resetButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            resetButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            resetButton.widthAnchor.constraint(equalToConstant: 25),
-            resetButton.heightAnchor.constraint(equalToConstant: 25)
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
-    }
-    
-    @objc
-    private func buttonTapped(_ sender: UIButton) {
-        self.presenter.showGreeting()
-    }
-    
-    @objc
-    private func resetTapped(_ sender: UIButton) {
-        self.presenter.resetLabel()
     }
 }
 
-extension MainVC: MainViewProtocol {
+extension MainVC: MainViewInput {
+    func success() {
+        tableView.reloadData()
+    }
     
-    func setGreeting(with text: String) {
-        self.label.text = text
+    func failure(_ error: Error) {
+        print(error.localizedDescription)
+    }
+    
+}
+
+extension MainVC: UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return presenter.comments?.count ?? 0
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(forIndexPath: indexPath)
+        let comment = presenter.comments?[indexPath.row]
+        cell.textLabel?.text = comment?.name
+        cell.textLabel?.textColor = .black
+        cell.backgroundColor = .clear
+        cell.selectionStyle = .none
+        return cell
+    }
+}
+
+extension MainVC: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let comment = presenter.comments?[indexPath.row]
+        let detailVC = ModuleBuilder.createDetailScreen(model: comment)
+        navigationController?.pushViewController(detailVC, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 0
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        return nil
     }
 }
 
